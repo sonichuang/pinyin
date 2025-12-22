@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中文转拼音工具 (CamelCase)</title>
+    <script src="https://unpkg.com/pinyin-pro"></script>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --bg-color: #f3f4f6;
+            --container-bg: #ffffff;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            width: 100%;
+            max-width: 800px;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .converter-box {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 16px;
+            box-sizing: border-box; /* 确保padding不撑大宽度 */
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            border-color: var(--primary-color);
+        }
+
+        /* 结果框背景设为淡灰色，表示只读 */
+        #output {
+            background-color: #f9fafb;
+            color: #2563eb; /* 结果用蓝色显示 */
+            font-weight: 500;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .btn-convert {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-copy {
+            background-color: #10b981; /* Green */
+            color: white;
+        }
+
+        .btn-clear {
+            background-color: #9ca3af;
+            color: white;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>中文转拼音 (首字母大写)</h1>
+    
+    <div class="converter-box">
+        <div class="input-group">
+            <label for="input">输入中文内容：</label>
+            <textarea id="input" placeholder="例如：福建省 泉州市 昌盛路 900号"></textarea>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-clear" onclick="clearText()">清空</button>
+            <button class="btn-convert" onclick="convertPinyin()">转换</button>
+        </div>
+
+        <div class="input-group">
+            <label for="output">转换结果：</label>
+            <textarea id="output" readonly placeholder="转换后的结果将显示在这里..."></textarea>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-copy" onclick="copyResult()">复制结果</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 引入 pinyin-pro 的核心方法
+    const { pinyin } = pinyinPro;
+
+    function convertPinyin() {
+        const inputText = document.getElementById('input').value;
+        if (!inputText) return;
+
+        /**
+         * 核心逻辑：
+         * 使用 replace 正则匹配所有中文字符。
+         * 对每一个中文字符单独进行拼音转换，并强制首字母大写。
+         * 这样可以完美保留原文中的空格、数字和标点符号。
+         */
+        const result = inputText.replace(/[\u4e00-\u9fa5]/g, (char) => {
+            // 获取单个字的拼音，不带声调
+            const py = pinyin(char, { 
+                toneType: 'none', 
+                type: 'string' 
+            });
+            // 首字母大写 + 剩余部分
+            return py.charAt(0).toUpperCase() + py.slice(1);
+        });
+
+        document.getElementById('output').value = result;
+    }
+
+    // 复制功能
+    function copyResult() {
+        const outputText = document.getElementById('output');
+        outputText.select();
+        document.execCommand('copy'); // 兼容性较好的复制方法
+        
+        // 简单的用户反馈
+        const originalBtnText = document.querySelector('.btn-copy').innerText;
+        document.querySelector('.btn-copy').innerText = '已复制!';
+        setTimeout(() => {
+            document.querySelector('.btn-copy').innerText = originalBtnText;
+        }, 2000);
+    }
+
+    // 清空功能
+    function clearText() {
+        document.getElementById('input').value = '';
+        document.getElementById('output').value = '';
+        document.getElementById('input').focus();
+    }
+
+    // 监听输入框，支持实时转换（可选，如果数据量大建议保留按钮触发）
+    document.getElementById('input').addEventListener('input', convertPinyin);
+</script>
+
+</body>
+</html>
