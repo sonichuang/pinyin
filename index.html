@@ -292,4 +292,61 @@
         if (p_prov) fullLineArr.push(p_prov);
         if (p_city) fullLineArr.push(p_city);
         
-        let header = fullLineArr
+        let header = fullLineArr.join(" "); 
+        let finalAddress = header;
+        
+        if (p_details) {
+            finalAddress += " " + p_details; // 市后面用空格连接详细地址
+        }
+        if (zip) {
+            finalAddress += " " + zip;
+        }
+
+        document.getElementById('fullResult').value = finalAddress;
+
+        // 填充拆分字段
+        setText('resSurname', p_surname);
+        setText('resFirstName', p_firstname);
+        setText('resPhone', phone);
+        setText('resProv', p_prov);
+        setText('resCity', p_city);
+        setText('resAddr', p_details);
+        setText('resZip', zip);
+    }
+
+    function setText(id, val) {
+        document.getElementById(id).textContent = val || "-";
+    }
+
+    function copyText(elementId) {
+        const el = document.getElementById(elementId);
+        let text = (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') ? el.value : el.innerText;
+        if(text === "-") text = "";
+        if (!text) return;
+
+        navigator.clipboard.writeText(text).then(() => {
+            const originalColor = el.style.backgroundColor;
+            el.style.backgroundColor = "#dcfce7"; 
+            setTimeout(() => el.style.backgroundColor = originalColor, 200);
+        });
+    }
+
+    function searchZip() {
+        const raw = document.getElementById('input').value;
+        if(raw) window.open(`https://www.baidu.com/s?wd=${encodeURIComponent(raw + ' 邮编')}`, '_blank');
+        else alert("请先输入地址内容");
+    }
+
+    function clearAll() {
+        document.getElementById('input').value = "";
+        document.getElementById('manualZip').value = "";
+        document.getElementById('fullResult').value = "";
+        ['resSurname','resFirstName','resPhone','resProv','resCity','resAddr','resZip'].forEach(id => {
+            document.getElementById(id).textContent = "";
+        });
+        document.getElementById('input').focus();
+    }
+</script>
+
+</body>
+</html>
