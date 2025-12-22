@@ -3,54 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能英文地址转换器 (V3.0)</title>
+    <title>地址转换器 V4 (完美修正版)</title>
     <script src="https://unpkg.com/pinyin-pro"></script>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --border: #cbd5e1; --text: #334155; }
+        :root { --primary: #2563eb; --bg: #f1f5f9; --border: #cbd5e1; --text: #334155; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); padding: 20px; color: var(--text); }
         .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        
-        h1 { text-align: center; color: #1e293b; margin-bottom: 25px; font-size: 22px; }
+        h1 { text-align: center; color: #0f172a; margin-bottom: 20px; font-size: 20px; font-weight: 700; }
         
         /* 输入区 */
-        .input-section { margin-bottom: 20px; }
-        label { display: block; font-weight: 700; margin-bottom: 8px; color: #1e293b; }
-        textarea { width: 100%; height: 80px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; box-sizing: border-box; transition: 0.2s; }
-        textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        label { display: block; font-weight: 700; margin-bottom: 6px; color: #475569; font-size: 14px; }
+        textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 15px; box-sizing: border-box; }
+        textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
 
-        /* 按钮区 */
-        .controls { display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
-        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; color: white; }
-        button:hover { opacity: 0.9; }
-        .btn-convert { background: var(--primary); flex-grow: 2; font-size: 16px; }
+        /* 按钮 */
+        .controls { display: flex; gap: 8px; margin: 15px 0 25px 0; flex-wrap: wrap; }
+        button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.1s; color: white; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-convert { background: var(--primary); flex-grow: 2; font-size: 15px; }
         .btn-clear { background: #94a3b8; }
         .btn-zip { background: #f59e0b; }
-        .zip-manual { padding: 0 15px; border: 1px solid var(--border); border-radius: 6px; width: 100px; text-align: center; font-size: 14px; }
+        .zip-manual { padding: 0 10px; border: 1px solid var(--border); border-radius: 6px; width: 80px; text-align: center; }
 
-        /* 结果展示 */
-        .result-section { margin-bottom: 30px; }
-        .result-box { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-family: "Monaco", "Consolas", monospace; font-size: 16px; line-height: 1.6; }
+        /* 结果区 */
+        .result-section { margin-bottom: 20px; }
+        .result-box { background: #eff6ff; border: 1px solid #93c5fd; color: #1e40af; font-family: "Monaco", "Consolas", monospace; font-size: 15px; line-height: 1.5; font-weight: 500; }
 
-        /* 拆分表格 */
-        .split-section { border-top: 2px dashed #e2e8f0; padding-top: 20px; }
-        .split-grid { display: grid; grid-template-columns: 100px 1fr 60px; gap: 10px; align-items: center; margin-bottom: 8px; }
-        .field-label { font-weight: 600; color: #64748b; text-align: right; font-size: 14px; }
-        .field-value { padding: 8px 12px; background: #f1f5f9; border-radius: 6px; border: 1px solid var(--border); font-family: monospace; color: #334155; min-height: 20px; word-break: break-all; font-size: 14px; }
-        .btn-copy-mini { padding: 5px 0; font-size: 12px; background: #10b981; width: 100%; }
+        /* 表格区 */
+        .split-section { border-top: 2px dashed #e2e8f0; padding-top: 15px; }
+        .split-row { display: flex; align-items: center; margin-bottom: 8px; gap: 10px; }
+        .field-label { width: 80px; font-weight: 600; color: #64748b; text-align: right; font-size: 13px; flex-shrink: 0; }
+        .field-value { flex-grow: 1; padding: 6px 10px; background: #f8fafc; border-radius: 4px; border: 1px solid var(--border); font-family: monospace; color: #334155; font-size: 14px; min-height: 18px; word-break: break-all; }
+        .btn-copy-mini { width: 50px; font-size: 11px; padding: 4px 0; background: #10b981; margin: 0; }
 
         @media (max-width: 600px) {
-            .split-grid { grid-template-columns: 1fr; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-            .field-label { text-align: left; }
+            .split-row { flex-wrap: wrap; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; }
+            .field-label { text-align: left; width: 100%; }
+            .btn-copy-mini { width: 100%; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🇨🇳 中文地址 -> 🇺🇸 英文拼音转换器 V3</h1>
+    <h1>🇨🇳 中文地址 -> 🇺🇸 英文拼音转换器 V4</h1>
     
-    <div class="input-section">
-        <label>输入中文信息 (包含姓名、电话、地址)：</label>
+    <div style="margin-bottom: 20px;">
+        <label>粘贴完整信息：</label>
         <textarea id="input" placeholder="例如：张三 13800138000 福建省泉州市丰泽区东海街道海星街..."></textarea>
     </div>
 
@@ -62,64 +61,28 @@
     </div>
 
     <div class="result-section">
-        <label>完整拼音地址 (Full Line)：</label>
+        <label>完整转换结果 (Full Line)：</label>
         <textarea id="fullResult" class="result-box" readonly onclick="this.select()"></textarea>
     </div>
 
     <div class="split-section">
-        <label style="margin-bottom: 15px; display:block;">详细拆分 (Field Breakdown)：</label>
+        <label style="margin-bottom: 10px; display:block; font-size:13px; color:#94a3b8;">拆分详情 (Details)：</label>
         
-        <div class="split-grid">
-            <div class="field-label">姓 Surname</div>
-            <div class="field-value" id="resSurname"></div>
-            <button class="btn-copy-mini" onclick="copyText('resSurname')">复制</button>
-        </div>
-        <div class="split-grid">
-            <div class="field-label">名 First Name</div>
-            <div class="field-value" id="resFirstName"></div>
-            <button class="btn-copy-mini" onclick="copyText('resFirstName')">复制</button>
-        </div>
-        <div class="split-grid">
-            <div class="field-label">电话 Phone</div>
-            <div class="field-value" id="resPhone"></div>
-            <button class="btn-copy-mini" onclick="copyText('resPhone')">复制</button>
-        </div>
-        <div class="split-grid">
-            <div class="field-label">省 Province</div>
-            <div class="field-value" id="resProv"></div>
-            <button class="btn-copy-mini" onclick="copyText('resProv')">复制</button>
-        </div>
-        <div class="split-grid">
-            <div class="field-label">市 City</div>
-            <div class="field-value" id="resCity"></div>
-            <button class="btn-copy-mini" onclick="copyText('resCity')">复制</button>
-        </div>
-        <div class="split-grid">
-            <div class="field-label">地址 Address</div>
-            <div class="field-value" id="resAddr"></div>
-            <button class="btn-copy-mini" onclick="copyText('resAddr')">复制</button>
-        </div>
-        <div class="split-grid">
-            <div class="field-label">邮编 Zip</div>
-            <div class="field-value" id="resZip"></div>
-            <button class="btn-copy-mini" onclick="copyText('resZip')">复制</button>
-        </div>
+        <div id="fieldsContainer"></div>
     </div>
 </div>
 
 <script>
     const { pinyin } = pinyinPro;
 
-    // 复姓列表 (用于区分姓和名)
+    // 复姓库
     const COMPOUND_SURNAMES = [
         "欧阳", "太史", "端木", "上官", "司马", "东方", "独孤", "南宫", "万俟", "闻人", "夏侯", "诸葛", "尉迟", "公羊", 
         "赫连", "澹台", "皇甫", "宗政", "濮阳", "公冶", "太叔", "申屠", "公孙", "慕容", "仲孙", "钟离", "长孙", "宇文", 
-        "司徒", "鲜于", "司空", "闾丘", "子车", "亓官", "司寇", "巫马", "公西", "颛孙", "壤驷", "公良", "漆雕", "乐正", 
-        "宰父", "谷梁", "拓跋", "夹谷", "轩辕", "令狐", "段干", "百里", "呼延", "东郭", "南门", "羊舌", "微生", "公户", 
-        "公玉", "公仪", "梁丘", "公仲", "公上", "公门", "公山", "公坚", "左丘", "公伯", "西门", "公祖", "第五", "公乘", 
-        "贯丘", "公晰", "南荣", "东里", "东宫", "仲长", "子书", "子桑", "即墨", "达奚", "褚师", "吴铭"
+        "司徒", "鲜于", "司空", "闾丘", "子车", "亓官", "司寇", "巫马", "公西", "颛孙", "壤驷", "公良", "漆雕", "乐正"
     ];
 
+    // 拼音首字母大写
     function toCamel(text) {
         if (!text) return "";
         return text.replace(/[\u4e00-\u9fa5]/g, (char) => {
@@ -128,132 +91,142 @@
         });
     }
 
-    function cleanPunctuation(str) {
+    // 标点清洗：转半角，去特殊符号
+    function cleanStr(str) {
         return str
-            .replace(/，/g, ',')
-            .replace(/。/g, '.')
-            .replace(/、/g, ',')
-            .replace(/：/g, ':')
-            .replace(/[\uff01-\uff5e]/g, function(ch) { 
-                return String.fromCharCode(ch.charCodeAt(0) - 0xfee0); 
-            }) 
+            .replace(/[\uff01-\uff5e]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xfee0)) // 全角转半角
+            .replace(/[\u3000]/g, ' ') // 全角空格转半角空格
+            .replace(/[，、。；：]/g, ' ') // 中文标点变空格，方便后续正则
+            .replace(/\s+/g, ' ') // 合并多余空格
             .trim();
     }
 
     function processAll() {
-        let raw = document.getElementById('input').value;
+        let original = document.getElementById('input').value;
         let manualZip = document.getElementById('manualZip').value.trim();
-        if (!raw) return;
+        if (!original) return;
 
-        raw = cleanPunctuation(raw);
+        // 1. 基础清洗
+        let raw = cleanStr(original);
 
-        // 1. 提取电话
+        // --- 逐步剥离提取 (Extract & Remove) ---
+
+        // 2. 提取电话 (Phone)
         let phone = "";
-        const phoneRegex = /(1[3-9]\d{9})|(\d{3,4}-\d{7,8})/;
+        const phoneRegex = /(1[3-9]\d{9})|(\d{3,4}-?\d{7,8})/;
         const phoneMatch = raw.match(phoneRegex);
         if (phoneMatch) {
             phone = phoneMatch[0];
-            raw = raw.replace(phone, " "); 
+            raw = raw.replace(phone, "").trim(); // 剔除并修剪
         }
 
-        // 2. 提取邮编
+        // 3. 提取邮编 (Zip)
         let zip = manualZip;
         if (!zip) {
             const zipRegex = /\d{6}/;
             const zipMatch = raw.match(zipRegex);
             if (zipMatch) {
                 zip = zipMatch[0];
-                raw = raw.replace(zip, " ");
+                raw = raw.replace(zip, "").trim();
             }
         }
 
-        // 3. 提取省
+        // 4. 提取省 (Province)
         let provinceRaw = "";
-        const provRegex = /(.{2,3}?(省|自治区|行政区))/;
+        // 匹配：开头或空格后的 (xx省|自治区)
+        const provRegex = /((.*?)(省|自治区|行政区))/; 
         const provMatch = raw.match(provRegex);
         if (provMatch) {
-            provinceRaw = provMatch[1];
-            raw = raw.replace(provinceRaw, " ");
+            // 找到省份关键词，但我们要确保它不是“详细地址”里的某个字
+            // 通常省份会在前部。这里我们假设匹配到的第一个就是省
+            provinceRaw = provMatch[1]; 
+            // 如果提取的内容太长(超过6个字)，可能是误判，这里简单处理
+            raw = raw.replace(provinceRaw, "").trim();
+            
+            // 清理一下提取出来的省份中可能夹带的空格
+            provinceRaw = provinceRaw.replace(/\s/g, '');
         }
 
-        // 4. 提取市
+        // 5. 提取市 (City)
         let cityRaw = "";
-        const cityRegex = /(.{2,3}?(市|州|盟|地区))/;
+        // 此时 raw 应该以 市 开头了 (因为省被删了)
+        // 匹配：开头处的 (xx市|地区...)
+        const cityRegex = /^(.{2,5}?(市|州|盟|地区))/;
         const cityMatch = raw.match(cityRegex);
         if (cityMatch) {
             cityRaw = cityMatch[1];
-            raw = raw.replace(cityRaw, " ");
+            raw = raw.replace(cityRaw, "").trim();
         }
 
-        // 5. 提取姓名 (加强版逻辑)
+        // 6. 提取姓名 (Name)
+        // 逻辑：剩余字符串的开头，如果是2-4个汉字，且不是地址关键词
         let surnameRaw = "";
         let firstNameRaw = "";
+        let fullNameRaw = "";
+
+        const addrKeywords = ['区', '县', '路', '街', '号', '室', '镇', '村', '苑', '栋', '楼'];
+        const startPart = raw.split(' ')[0]; // 取第一段（防止取到后面的地址）
         
-        raw = raw.trim();
-        // 排除地址关键词，防止把地址当名字
-        const addrKeywords = ['区', '县', '路', '街', '号', '室', '镇', '村'];
-        const startChars = raw.substring(0, 4);
-        let looksLikeAddress = false;
+        let looksLikeAddr = false;
         for (let kw of addrKeywords) {
-            if (startChars.includes(kw)) looksLikeAddress = true;
+            if (startPart.includes(kw)) looksLikeAddr = true;
         }
 
-        if (!looksLikeAddress) {
-            // 匹配头部中文
-            const nameMatch = raw.match(/^([\u4e00-\u9fa5]{2,4})(\s|$)/);
-            if (nameMatch) {
-                const fullName = nameMatch[1];
-                raw = raw.replace(fullName, "").trim();
+        // 如果开头不包含地址词，且长度合适，认为是名字
+        if (!looksLikeAddr && startPart.length >= 2 && startPart.length <= 4) {
+            // 必须全是汉字
+            if (/^[\u4e00-\u9fa5]+$/.test(startPart)) {
+                fullNameRaw = startPart;
+                raw = raw.replace(fullNameRaw, "").trim();
 
-                // 拆分姓和名
-                let foundCompound = false;
+                // 拆分姓/名
+                let isCompound = false;
                 for (let cs of COMPOUND_SURNAMES) {
-                    if (fullName.startsWith(cs)) {
+                    if (fullNameRaw.startsWith(cs)) {
                         surnameRaw = cs;
-                        firstNameRaw = fullName.slice(cs.length);
-                        foundCompound = true;
+                        firstNameRaw = fullNameRaw.slice(cs.length);
+                        isCompound = true;
                         break;
                     }
                 }
-                if (!foundCompound) {
-                    surnameRaw = fullName.charAt(0);
-                    firstNameRaw = fullName.slice(1);
+                if (!isCompound) {
+                    surnameRaw = fullNameRaw.charAt(0);
+                    firstNameRaw = fullNameRaw.slice(1);
                 }
             }
         }
 
-        // 6. 详细地址切分 (修复“街道”问题)
-        // 优先级：先匹配长词(2字)，再匹配短词(1字)
-        const longKeywords = ['街道', '社区', '新区', '大厦', '中心', '广场', '单元', '花园', '小区'];
-        const shortKeywords = ['区', '县', '市', '镇', '村', '路', '街', '巷', '道', '段', '弄', '号', '栋', '座', '楼', '室', '房', '层', '苑'];
-        
+        // 7. 详细地址切分
+        // 此时 raw 剩下的就是详细地址。需要用逗号隔开。
+        // 优先双字关键词，后单字
+        const longKeywords = ['街道', '社区', '新区', '大厦', '中心', '广场', '花园', '小区', '公寓'];
+        const shortKeywords = ['区', '县', '镇', '村', '路', '街', '巷', '道', '段', '弄', '号', '栋', '座', '楼', '室', '房', '层', '苑'];
+
         let parts = [];
         let currentPart = "";
         
+        // 去除剩余字符串中的空格，防止干扰
+        raw = raw.replace(/\s/g, '');
+
         for (let i = 0; i < raw.length; i++) {
             const char = raw[i];
-            if (char === ' ' || char === ',') continue;
-
             currentPart += char;
 
-            // 检查双字后缀 (如：街道)
-            // 看未来一个字
+            // 预判双字
             if (i < raw.length - 1) {
                 const twoChars = char + raw[i+1];
                 if (longKeywords.includes(twoChars)) {
-                    // 发现双字后缀，把下一个字也加上
-                    currentPart += raw[i+1];
+                    currentPart += raw[i+1]; // 把第二个字加上
                     parts.push(currentPart);
                     currentPart = "";
-                    i++; // 跳过下一个字
+                    i++; 
                     continue;
                 }
             }
 
-            // 检查单字后缀 (如：街)
-            // 但如果前面已经匹配了双字，这里不会执行到
+            // 判断单字
             if (shortKeywords.includes(char)) {
-                // 如果是数字+关键词(如1号)，或者文字+关键词
+                // 如果是数字+号 (如 900号)，应该切分
                 parts.push(currentPart);
                 currentPart = "";
             }
@@ -261,21 +234,21 @@
         if (currentPart) parts.push(currentPart);
 
 
-        // --- 转换拼音 ---
-        
-        // 1. 姓名
-        const p_surname = toCamel(surnameRaw);
-        const p_firstname = toCamel(firstNameRaw);
-        const p_fullName = (p_surname + " " + p_firstname).trim(); // 中间加空格
+        // --- 转拼音 & 格式化 ---
 
-        // 2. 省市
+        // 姓名
+        const p_sur = toCamel(surnameRaw);
+        const p_first = toCamel(firstNameRaw);
+        const p_fullName = (p_sur + " " + p_first).trim();
+
+        // 省市 (去后缀)
         let p_prov = toCamel(provinceRaw);
         if (p_prov.endsWith("Sheng")) p_prov = p_prov.slice(0, -5);
-
+        
         let p_city = toCamel(cityRaw);
         if (p_city.endsWith("Shi")) p_city = p_city.slice(0, -3);
 
-        // 3. 详细地址
+        // 详细地址 (内部用逗号)
         let p_details = parts.map(part => {
              return part.replace(/([\u4e00-\u9fa5]+)|([0-9a-zA-Z]+)/g, (m, ch, num) => {
                  if (ch) return toCamel(ch);
@@ -283,67 +256,64 @@
              });
         }).filter(p => p).join(", "); 
 
-        // --- 组装最终结果 ---
-        // 顺序：Prov City Detail1, Detail2... Zip
-        // 名字和电话不放在地址行里，除非你有特殊要求（通常地址行不含名字）
-        // 按照之前的要求，这里只放地址
+        // --- 最终组装 (Full Line) ---
+        // 格式：Name Phone Prov City Detail Zip
+        // 符号：空格 空格 空格 空格 逗号(在Detail内部) 空格
         
-        let fullLineArr = [];
-        if (p_prov) fullLineArr.push(p_prov);
-        if (p_city) fullLineArr.push(p_city);
-        
-        let header = fullLineArr.join(" "); 
-        let finalAddress = header;
-        
-        if (p_details) {
-            finalAddress += " " + p_details; // 市后面用空格连接详细地址
-        }
-        if (zip) {
-            finalAddress += " " + zip;
-        }
+        let finalArr = [];
+        if (p_fullName) finalArr.push(p_fullName);
+        if (phone) finalArr.push(phone);
+        if (p_prov) finalArr.push(p_prov);
+        if (p_city) finalArr.push(p_city);
+        if (p_details) finalArr.push(p_details);
+        if (zip) finalArr.push(zip);
 
-        document.getElementById('fullResult').value = finalAddress;
+        // 使用单空格连接
+        document.getElementById('fullResult').value = finalArr.join(" ");
 
-        // 填充拆分字段
-        setText('resSurname', p_surname);
-        setText('resFirstName', p_firstname);
-        setText('resPhone', phone);
-        setText('resProv', p_prov);
-        setText('resCity', p_city);
-        setText('resAddr', p_details);
-        setText('resZip', zip);
+        // --- 渲染拆分列表 ---
+        renderFields([
+            { label: '姓 Surname', val: p_sur },
+            { label: '名 Name', val: p_first },
+            { label: '电话 Phone', val: phone },
+            { label: '省 Province', val: p_prov },
+            { label: '市 City', val: p_city },
+            { label: '地址 Addr', val: p_details },
+            { label: '邮编 Zip', val: zip }
+        ]);
     }
 
-    function setText(id, val) {
-        document.getElementById(id).textContent = val || "-";
-    }
-
-    function copyText(elementId) {
-        const el = document.getElementById(elementId);
-        let text = (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') ? el.value : el.innerText;
-        if(text === "-") text = "";
-        if (!text) return;
-
-        navigator.clipboard.writeText(text).then(() => {
-            const originalColor = el.style.backgroundColor;
-            el.style.backgroundColor = "#dcfce7"; 
-            setTimeout(() => el.style.backgroundColor = originalColor, 200);
+    function renderFields(data) {
+        const container = document.getElementById('fieldsContainer');
+        container.innerHTML = "";
+        data.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'split-row';
+            row.innerHTML = `
+                <div class="field-label">${item.label}</div>
+                <div class="field-value" id="val-${item.label}">${item.val || '-'}</div>
+                <button class="btn-copy-mini" onclick="copyVal('${item.val || ''}')">复制</button>
+            `;
+            container.appendChild(row);
         });
+    }
+
+    function copyVal(text) {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
     }
 
     function searchZip() {
         const raw = document.getElementById('input').value;
         if(raw) window.open(`https://www.baidu.com/s?wd=${encodeURIComponent(raw + ' 邮编')}`, '_blank');
-        else alert("请先输入地址内容");
+        else alert("请输入内容");
     }
 
     function clearAll() {
         document.getElementById('input').value = "";
         document.getElementById('manualZip').value = "";
         document.getElementById('fullResult').value = "";
-        ['resSurname','resFirstName','resPhone','resProv','resCity','resAddr','resZip'].forEach(id => {
-            document.getElementById(id).textContent = "";
-        });
+        document.getElementById('fieldsContainer').innerHTML = "";
         document.getElementById('input').focus();
     }
 </script>
