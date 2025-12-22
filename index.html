@@ -3,209 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>中文转拼音工具 (CamelCase)</title>
+    <title>智能英文地址转换器 (Smart Address Converter)</title>
     <script src="https://unpkg.com/pinyin-pro"></script>
     <style>
-        :root {
-            --primary-color: #2563eb;
-            --bg-color: #f3f4f6;
-            --container-bg: #ffffff;
-            --border-color: #e5e7eb;
-        }
+        :root { --primary: #2563eb; --bg: #f3f4f6; --white: #ffffff; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 20px; display: flex; justify-content: center; }
+        .container { background: var(--white); width: 100%; max-width: 800px; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #1f2937; margin-bottom: 20px; font-size: 22px; }
+        textarea { width: 100%; height: 100px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
+        textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
+        
+        .output-box { background: #f8fafc; color: #2563eb; font-family: monospace; font-size: 16px; line-height: 1.6; }
+        
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .zip-group { display: flex; align-items: center; gap: 5px; flex-grow: 1; }
+        .zip-input { padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; width: 100px; }
+        
+        button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: 500; transition: 0.2s; }
+        .btn-convert { background: var(--primary); flex-grow: 2; }
+        .btn-search-zip { background: #f59e0b; }
+        .btn-copy { background: #10b981; width: 100%; margin-top: 10px; }
+        .btn-clear { background: #9ca3af; }
+        button:hover { opacity: 0.9; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            background-color: var(--container-bg);
-            width: 100%;
-            max-width: 800px;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            text-align: center;
-            color: #1f2937;
-            margin-bottom: 30px;
-            font-size: 24px;
-        }
-
-        .converter-box {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        label {
-            font-weight: 600;
-            color: #374151;
-            font-size: 14px;
-        }
-
-        textarea {
-            width: 100%;
-            height: 150px;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            resize: vertical;
-            font-size: 16px;
-            box-sizing: border-box; /* 确保padding不撑大宽度 */
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        textarea:focus {
-            border-color: var(--primary-color);
-        }
-
-        /* 结果框背景设为淡灰色，表示只读 */
-        #output {
-            background-color: #f9fafb;
-            color: #2563eb; /* 结果用蓝色显示 */
-            font-weight: 500;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: opacity 0.2s;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        .btn-convert {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .btn-copy {
-            background-color: #10b981; /* Green */
-            color: white;
-        }
-
-        .btn-clear {
-            background-color: #9ca3af;
-            color: white;
-        }
-
-        /* 移动端适配 */
-        @media (max-width: 600px) {
-            .container {
-                padding: 15px;
-            }
-            .btn-group {
-                flex-direction: column;
-            }
-            button {
-                width: 100%;
-            }
-        }
+        .note { font-size: 12px; color: #6b7280; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>中文转拼音 (首字母大写)</h1>
+    <h1>智能地址分词转拼音</h1>
     
-    <div class="converter-box">
-        <div class="input-group">
-            <label for="input">输入中文内容：</label>
-            <textarea id="input" placeholder="例如：福建省 泉州市 昌盛路 900号"></textarea>
-        </div>
+    <label>输入中文地址：</label>
+    <textarea id="input" placeholder="例如：福建省泉州市洛江区万荣街97号洛江人民政府大楼前楼1213"></textarea>
 
-        <div class="btn-group">
-            <button class="btn-clear" onclick="clearText()">清空</button>
-            <button class="btn-convert" onclick="convertPinyin()">转换</button>
+    <div class="controls">
+        <button class="btn-clear" onclick="clearAll()">清空</button>
+        <button class="btn-search-zip" onclick="searchZip()">🔍 搜邮编</button>
+        <div class="zip-group">
+            <input type="text" id="zipInput" class="zip-input" placeholder="填入邮编">
         </div>
-
-        <div class="input-group">
-            <label for="output">转换结果：</label>
-            <textarea id="output" readonly placeholder="转换后的结果将显示在这里..."></textarea>
-        </div>
-
-        <div class="btn-group">
-            <button class="btn-copy" onclick="copyResult()">复制结果</button>
-        </div>
+        <button class="btn-convert" onclick="processAddress()">转换 (Convert)</button>
     </div>
+
+    <label>转换结果：</label>
+    <textarea id="output" class="output-box" readonly></textarea>
+    <button class="btn-copy" onclick="copyResult()">复制结果</button>
+    <div class="note">* 自动移除了Sheng/Shi后缀，省市空格分隔，其他逗号分隔。</div>
 </div>
 
 <script>
-    // 引入 pinyin-pro 的核心方法
     const { pinyin } = pinyinPro;
 
-    function convertPinyin() {
-        const inputText = document.getElementById('input').value;
-        if (!inputText) return;
-
-        /**
-         * 核心逻辑：
-         * 使用 replace 正则匹配所有中文字符。
-         * 对每一个中文字符单独进行拼音转换，并强制首字母大写。
-         * 这样可以完美保留原文中的空格、数字和标点符号。
-         */
-        const result = inputText.replace(/[\u4e00-\u9fa5]/g, (char) => {
-            // 获取单个字的拼音，不带声调
-            const py = pinyin(char, { 
-                toneType: 'none', 
-                type: 'string' 
-            });
-            // 首字母大写 + 剩余部分
+    function toPinyinCamel(text) {
+        if (!text) return "";
+        // 替换每个汉字为拼音
+        return text.replace(/[\u4e00-\u9fa5]/g, (char) => {
+            const py = pinyin(char, { toneType: 'none', type: 'string' });
             return py.charAt(0).toUpperCase() + py.slice(1);
         });
+    }
+
+    function processAddress() {
+        let raw = document.getElementById('input').value.trim();
+        const zip = document.getElementById('zipInput').value.trim();
+        
+        if (!raw) return;
+
+        // 1. 提取省份 (匹配 '省' 或 自治区)
+        let province = "";
+        const provRegex = /(.+?(省|自治区|行政区))/;
+        const provMatch = raw.match(provRegex);
+        if (provMatch) {
+            province = provMatch[1];
+            raw = raw.replace(province, ""); // 从原句中移除
+        }
+
+        // 2. 提取城市 (匹配 '市' 或 州/盟，但在省之后)
+        let city = "";
+        const cityRegex = /(.+?(市|州|盟|地区))/;
+        const cityMatch = raw.match(cityRegex);
+        if (cityMatch) {
+            city = cityMatch[1];
+            raw = raw.replace(city, "");
+        }
+
+        // 3. 智能分词其他部分 (区, 县, 路, 街, 号, 栋, 楼, 室)
+        // 逻辑：利用正则切割，保留分隔符
+        // 匹配逻辑：任意文字 + (区|县|路|街|巷|道|号|栋|座|楼|室|房|苑|大厦|中心)
+        const parts = [];
+        
+        // 定义分割关键字
+        const keywords = ['区', '县', '市', '路', '街', '巷', '道', '段', '号', '栋', '座', '楼', '室', '房', '苑', '大厦', '中心', '广场'];
+        
+        let currentPart = "";
+        for (let i = 0; i < raw.length; i++) {
+            currentPart += raw[i];
+            // 如果当前字是关键字，或者遇到数字结束（例如 1213 这种没单位的）
+            // 简单处理：如果当前字符在关键字里，切分
+            if (keywords.includes(raw[i])) {
+                parts.push(currentPart);
+                currentPart = "";
+            }
+        }
+        if (currentPart) parts.push(currentPart); // 把剩下的（如 1213）加上
+
+        // --- 开始转换 ---
+
+        // 处理省：转拼音 -> 去掉 "Sheng"
+        let p_prov = toPinyinCamel(province);
+        if (p_prov.endsWith("Sheng")) p_prov = p_prov.slice(0, -5);
+
+        // 处理市：转拼音 -> 去掉 "Shi"
+        let p_city = toPinyinCamel(city);
+        if (p_city.endsWith("Shi")) p_city = p_city.slice(0, -3);
+
+        // 处理剩余部分
+        let p_others = parts.map(part => {
+            // 保留原有数字和非中文字符
+            return part.replace(/([\u4e00-\u9fa5]+)|([0-9a-zA-Z]+)/g, (match, ch, num) => {
+                if (ch) return toPinyinCamel(ch);
+                return match; // 数字直接返回
+            });
+        }).filter(p => p.trim() !== ""); // 过滤空
+
+        // --- 组装最终结果 ---
+        // 规则：省 市 (空格) 其他 (逗号)
+        let finalArr = [];
+        if (p_prov) finalArr.push(p_prov);
+        if (p_city) finalArr.push(p_city);
+        
+        // 前两个元素用空格连接
+        let header = finalArr.join(" "); 
+        
+        // 后面的用逗号连接
+        let body = p_others.join(", ");
+
+        // 拼接头部和主体
+        let result = header;
+        if (body) {
+            result += (result ? " " : "") + body;
+        }
+
+        // 加上邮编 (如果有)
+        if (zip) {
+            result += " " + zip;
+        }
 
         document.getElementById('output').value = result;
     }
 
-    // 复制功能
-    function copyResult() {
-        const outputText = document.getElementById('output');
-        outputText.select();
-        document.execCommand('copy'); // 兼容性较好的复制方法
-        
-        // 简单的用户反馈
-        const originalBtnText = document.querySelector('.btn-copy').innerText;
-        document.querySelector('.btn-copy').innerText = '已复制!';
-        setTimeout(() => {
-            document.querySelector('.btn-copy').innerText = originalBtnText;
-        }, 2000);
+    function searchZip() {
+        const address = document.getElementById('input').value;
+        if (address) {
+            // 打开百度搜索邮编
+            window.open(`https://www.baidu.com/s?wd=${encodeURIComponent(address + ' 邮编')}`, '_blank');
+        } else {
+            alert("请先输入地址");
+        }
     }
 
-    // 清空功能
-    function clearText() {
-        document.getElementById('input').value = '';
-        document.getElementById('output').value = '';
+    function copyResult() {
+        const el = document.getElementById('output');
+        el.select();
+        document.execCommand('copy');
+    }
+
+    function clearAll() {
+        document.getElementById('input').value = "";
+        document.getElementById('output').value = "";
+        document.getElementById('zipInput').value = "";
         document.getElementById('input').focus();
     }
-
-    // 监听输入框，支持实时转换（可选，如果数据量大建议保留按钮触发）
-    document.getElementById('input').addEventListener('input', convertPinyin);
 </script>
 
 </body>
