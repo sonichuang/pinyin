@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>地址转换器 V6 (搜邮编优化版)</title>
+    <title>地址转换器 V8 (陕西/山西区分版)</title>
     <script src="https://unpkg.com/pinyin-pro"></script>
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --border: #cbd5e1; --text: #334155; }
@@ -46,11 +46,11 @@
 <body>
 
 <div class="container">
-    <h1>中文地址 -> 英文拼音转换器 V6 (搜邮编优化版)</h1>
+    <h1>中文地址 -> 英文拼音转换器 V8 (Shaanxi/Shanxi)</h1>
     
     <div style="margin-bottom: 20px;">
         <label>粘贴完整信息：</label>
-        <textarea id="input" placeholder="例如：庄丽丽 13908576456 福建省泉州市丰泽区东海街道海星街100号..."></textarea>
+        <textarea id="input" placeholder="例如：王五 13900000000 陕西省西安市雁塔区... (或 山西省太原市...)"></textarea>
     </div>
 
     <div class="controls">
@@ -80,19 +80,15 @@
         "司徒", "鲜于", "司空", "闾丘", "子车", "亓官", "司寇", "巫马", "公西", "颛孙", "壤驷", "公良", "漆雕", "乐正"
     ];
 
+    const DIRECT_CITIES = ['北京', '上海', '天津', '重庆'];
+
     function toHalfWidth(str) {
         let result = "";
         for (let i = 0; i < str.length; i++) {
             let code = str.charCodeAt(i);
-            if (code === 12288) {
-                result += String.fromCharCode(32);
-            }
-            else if (code >= 65281 && code <= 65374) {
-                result += String.fromCharCode(code - 65248);
-            }
-            else {
-                result += str.charAt(i);
-            }
+            if (code === 12288) result += String.fromCharCode(32);
+            else if (code >= 65281 && code <= 65374) result += String.fromCharCode(code - 65248);
+            else result += str.charAt(i);
         }
         return result;
     }
@@ -134,24 +130,42 @@
             }
         }
 
-        // 3. 分割姓名和地址 (使用省市关键词锚点)
+        // 3. 智能定位切割 (姓名 vs 地址)
         let namePart = "";
         let addressPart = "";
-        const provCityRegex = /(.{2,3}?(省|自治区|行政区|市|地区))/; 
-        const pcMatch = raw.match(provCityRegex);
+        const regionKeywords = [...DIRECT_CITIES, '省', '自治区', '行政区', '市', '地区'];
         
-        if (pcMatch) {
-            const addrStartIndex = raw.indexOf(pcMatch[0]);
-            namePart = raw.substring(0, addrStartIndex).trim();
-            addressPart = raw.substring(addrStartIndex).trim();
+        let firstIndex = -1;
+        for (let kw of regionKeywords) {
+            const idx = raw.indexOf(kw);
+            if (idx !== -1) {
+                if (DIRECT_CITIES.includes(kw)) {
+                     if (firstIndex === -1 || idx < firstIndex) firstIndex = idx;
+                } else {
+                    const match = raw.match(new RegExp(`.{2,3}?${kw}`));
+                    if (match && (firstIndex === -1 || match.index < firstIndex)) {
+                        firstIndex = match.index;
+                    }
+                }
+            }
+        }
+        if (firstIndex === -1) {
+             const provCityRegex = /(.{2,3}?(省|自治区|行政区|市|地区))/; 
+             const pcMatch = raw.match(provCityRegex);
+             if (pcMatch) firstIndex = pcMatch.index;
+        }
+
+        if (firstIndex !== -1) {
+            namePart = raw.substring(0, firstIndex).trim();
+            addressPart = raw.substring(firstIndex).trim();
         } else {
-            addressPart = raw; // 没找到省市，全当地址
+            addressPart = raw;
         }
 
         // 4. 姓名处理
         let surname = "";
         let firstname = "";
-        namePart = namePart.replace(/\s+/g, ''); // 去空格
+        namePart = namePart.replace(/\s+/g, ''); 
         
         if (namePart.length >= 2) {
             let isCompound = false;
@@ -174,27 +188,43 @@
         let city = "";
         let tempAddr = addressPart;
 
-        const provRegex = /^(.{2,5}?(省|自治区|行政区))/;
-        const pMatch = tempAddr.match(provRegex);
-        if (pMatch) {
-            province = pMatch[1];
-            tempAddr = tempAddr.replace(province, "").trim();
+        // A. 优先检测直辖市
+        let isDirectCity = false;
+        for (let dc of DIRECT_CITIES) {
+            if (tempAddr.startsWith(dc)) {
+                isDirectCity = true;
+                province = dc;
+                city = dc; 
+                if (tempAddr.startsWith(dc + "市")) tempAddr = tempAddr.replace(dc + "市", "").trim();
+                else tempAddr = tempAddr.replace(dc, "").trim();
+                break;
+            }
         }
 
-        const cityRegex = /^(.{2,5}?(市|州|盟|地区))/;
-        const cMatch = tempAddr.match(cityRegex);
-        if (cMatch) {
-            city = cMatch[1];
-            tempAddr = tempAddr.replace(city, "").trim();
+        // B. 普通省份
+        if (!isDirectCity) {
+            const provRegex = /^(.{2,5}?(省|自治区|行政区))/;
+            const pMatch = tempAddr.match(provRegex);
+            if (pMatch) {
+                province = pMatch[1];
+                tempAddr = tempAddr.replace(province, "").trim();
+            }
+
+            const cityRegex = /^(.{2,5}?(市|州|盟|地区))/;
+            const cMatch = tempAddr.match(cityRegex);
+            if (cMatch) {
+                city = cMatch[1];
+                tempAddr = tempAddr.replace(city, "").trim();
+            }
         }
 
-        // 详细地址切分
+        // 6. 详细地址切分
         const longKeywords = ['街道', '社区', '新区', '大厦', '中心', '广场', '花园', '小区', '公寓', '单元'];
         const shortKeywords = ['区', '县', '镇', '村', '路', '街', '巷', '道', '段', '弄', '号', '栋', '座', '楼', '室', '房', '层', '苑'];
         
         let detailParts = [];
         let currentPart = "";
-        tempAddr = tempAddr.replace(/\s/g, ''); // 详细地址去空格
+        tempAddr = tempAddr.replace(/\s/g, ''); 
 
         for (let i = 0; i < tempAddr.length; i++) {
             const char = tempAddr[i];
@@ -217,13 +247,25 @@
         }
         if (currentPart) detailParts.push(currentPart);
 
-        // 6. 拼音生成
+        // 7. 拼音生成
         const p_surname = toCamel(surname);
         const p_firstname = toCamel(firstname);
         const p_fullName = (p_surname + " " + p_firstname).trim();
 
-        let p_prov = toCamel(province);
-        if (p_prov.endsWith("Sheng")) p_prov = p_prov.slice(0, -5);
+        // --- 核心修改：省份处理 (陕西 vs 山西) ---
+        let p_prov = "";
+        
+        // 检查是否包含“陕西”
+        if (province.includes('陕西')) {
+            p_prov = "ShaanXi"; // 强制双a
+        } else {
+            // 普通省份 或 直辖市
+            p_prov = toCamel(province);
+            // 如果不是直辖市，且不是陕西（陕西已被上面拦截），去后缀
+            if (!isDirectCity && p_prov.endsWith("Sheng")) {
+                p_prov = p_prov.slice(0, -5);
+            }
+        }
 
         let p_city = toCamel(city);
         if (p_city.endsWith("Shi")) p_city = p_city.slice(0, -3);
@@ -235,7 +277,7 @@
              });
         }).filter(p => p).join(", "); 
 
-        // 7. 组装
+        // 8. 组装
         let finalArr = [];
         if (p_fullName) finalArr.push(p_fullName);
         if (phone) finalArr.push(phone);
@@ -281,15 +323,10 @@
         navigator.clipboard.writeText(text);
     }
 
-    // --- 核心修改：搜索逻辑 ---
     function searchZip() {
         const raw = document.getElementById('input').value;
-        if(raw) {
-            // 这里修改为：原文 + 空格 + 邮政编码
-            window.open(`https://www.baidu.com/s?wd=${encodeURIComponent(raw + ' 邮政编码')}`, '_blank');
-        } else {
-            alert("请输入内容");
-        }
+        if(raw) window.open(`https://www.baidu.com/s?wd=${encodeURIComponent(raw + ' 邮政编码')}`, '_blank');
+        else alert("请输入内容");
     }
 
     function clearAll() {
