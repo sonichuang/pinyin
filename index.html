@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>地址转换器 V9 (智能搜邮编版)</title>
+    <title>地址转换器 V10 (直辖市去重版)</title>
     <script src="https://unpkg.com/pinyin-pro"></script>
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --border: #cbd5e1; --text: #334155; }
@@ -46,11 +46,11 @@
 <body>
 
 <div class="container">
-    <h1>中文地址 -> 英文拼音转换器 V9 (智能搜邮编)</h1>
+    <h1>中文地址 -> 英文拼音转换器 V10 (直辖市去重版)</h1>
     
     <div style="margin-bottom: 20px;">
         <label>粘贴完整信息：</label>
-        <textarea id="input" placeholder="例如：王五 13900000000 陕西省西安市雁塔区..."></textarea>
+        <textarea id="input" placeholder="例如：上海上海市闵行区... 或 陕西省西安市..."></textarea>
     </div>
 
     <div class="controls">
@@ -101,7 +101,7 @@
         });
     }
 
-    // --- 通用查找地址起点的逻辑 (Extract Start Index) ---
+    // 查找地址起点的辅助函数
     function findAddressStartIndex(rawStr) {
         const regionKeywords = [...DIRECT_CITIES, '省', '自治区', '行政区', '市', '地区'];
         let firstIndex = -1;
@@ -111,7 +111,6 @@
                 if (DIRECT_CITIES.includes(kw)) {
                      if (firstIndex === -1 || idx < firstIndex) firstIndex = idx;
                 } else {
-                    // 正则寻找 keywords，防止匹配到名字里的字
                     const match = rawStr.match(new RegExp(`.{2,3}?${kw}`));
                     if (match && (firstIndex === -1 || match.index < firstIndex)) {
                         firstIndex = match.index;
@@ -119,7 +118,6 @@
                 }
             }
         }
-        // 正则兜底
         if (firstIndex === -1) {
              const provCityRegex = /(.{2,3}?(省|自治区|行政区|市|地区))/; 
              const pcMatch = rawStr.match(provCityRegex);
@@ -157,12 +155,11 @@
             }
         }
 
-        // 3. 智能定位切割 (Name vs Address)
+        // 3. 智能定位切割
         let namePart = "";
         let addressPart = "";
         
         let firstIndex = findAddressStartIndex(raw);
-
         if (firstIndex !== -1) {
             namePart = raw.substring(0, firstIndex).trim();
             addressPart = raw.substring(firstIndex).trim();
@@ -191,20 +188,33 @@
             }
         }
 
-        // 5. 地址处理
+        // 5. 地址处理 (省市解析)
         let province = "";
         let city = "";
         let tempAddr = addressPart;
 
-        // A. 优先检测直辖市
+        // A. 直辖市检测与清理 (V10 核心修复：循环清洗)
         let isDirectCity = false;
         for (let dc of DIRECT_CITIES) {
             if (tempAddr.startsWith(dc)) {
                 isDirectCity = true;
                 province = dc;
                 city = dc; 
-                if (tempAddr.startsWith(dc + "市")) tempAddr = tempAddr.replace(dc + "市", "").trim();
-                else tempAddr = tempAddr.replace(dc, "").trim();
+                
+                // 循环剥离：只要开头是 "上海" 或 "上海市"，就一直删
+                // 防止 "上海上海市..." 这种情况
+                let keepCleaning = true;
+                while (keepCleaning) {
+                    if (tempAddr.startsWith(dc + "市")) {
+                        tempAddr = tempAddr.replace(dc + "市", "").trim();
+                    } else if (tempAddr.startsWith(dc)) {
+                        tempAddr = tempAddr.replace(dc, "").trim();
+                    } else {
+                        keepCleaning = false;
+                    }
+                    // 安全出口：如果删空了
+                    if (!tempAddr) keepCleaning = false;
+                }
                 break;
             }
         }
@@ -327,32 +337,24 @@
         navigator.clipboard.writeText(text);
     }
 
-    // --- V9 核心修改：瘦身版搜邮编 ---
+    // 智能搜邮编 (无字数限制版)
     function searchZip() {
         let raw = document.getElementById('input').value;
         if(!raw) { alert("请输入内容"); return; }
-
-        // 1. 清洗 (转半角 + 去标点)
+        
         let clean = toHalfWidth(raw).replace(/[，。、；：]/g, ' ').trim();
-
-        // 2. 暴力去电话 (Regex)
         const phoneRegex = /(1[3-9]\d{9})|(\d{3,4}-?\d{7,8})/;
         clean = clean.replace(phoneRegex, "").trim();
 
-        // 3. 去人名 (截取地址起点之后的字符串)
         let startIndex = findAddressStartIndex(clean);
         let addressOnly = clean;
-        
         if (startIndex !== -1) {
-            // 从省/市开始截取，丢弃前面的姓名
             addressOnly = clean.substring(startIndex).trim();
         }
 
-        // 4. 发起搜索
         if(addressOnly) {
             window.open(`https://www.baidu.com/s?wd=${encodeURIComponent(addressOnly + ' 邮政编码')}`, '_blank');
         } else {
-            // 万一截取失败，回退到搜索 clean 字符串
             window.open(`https://www.baidu.com/s?wd=${encodeURIComponent(clean + ' 邮政编码')}`, '_blank');
         }
     }
