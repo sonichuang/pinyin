@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>地址转换器 V5 (精准切割版)</title>
+    <title>地址转换器 V6 (搜邮编优化版)</title>
     <script src="https://unpkg.com/pinyin-pro"></script>
     <style>
         :root { --primary: #2563eb; --bg: #f8fafc; --border: #cbd5e1; --text: #334155; }
@@ -46,7 +46,7 @@
 <body>
 
 <div class="container">
-    <h1>中文地址 -> 英文拼音转换器 V5 (修复版)</h1>
+    <h1>中文地址 -> 英文拼音转换器 V6 (搜邮编优化版)</h1>
     
     <div style="margin-bottom: 20px;">
         <label>粘贴完整信息：</label>
@@ -74,23 +74,19 @@
 <script>
     const { pinyin } = pinyinPro;
 
-    // 复姓库
     const COMPOUND_SURNAMES = [
         "欧阳", "太史", "端木", "上官", "司马", "东方", "独孤", "南宫", "万俟", "闻人", "夏侯", "诸葛", "尉迟", "公羊", 
         "赫连", "澹台", "皇甫", "宗政", "濮阳", "公冶", "太叔", "申屠", "公孙", "慕容", "仲孙", "钟离", "长孙", "宇文", 
         "司徒", "鲜于", "司空", "闾丘", "子车", "亓官", "司寇", "巫马", "公西", "颛孙", "壤驷", "公良", "漆雕", "乐正"
     ];
 
-    // 1. 强力半角化函数：解决所有全角字符问题
     function toHalfWidth(str) {
         let result = "";
         for (let i = 0; i < str.length; i++) {
             let code = str.charCodeAt(i);
-            // 全角空格 (12288) -> 半角空格 (32)
             if (code === 12288) {
                 result += String.fromCharCode(32);
             }
-            // 全角字符 (65281-65374) -> 半角字符 (33-126)
             else if (code >= 65281 && code <= 65374) {
                 result += String.fromCharCode(code - 65248);
             }
@@ -101,7 +97,6 @@
         return result;
     }
 
-    // 2. 拼音转换 (CamelCase)
     function toCamel(text) {
         if (!text) return "";
         return text.replace(/[\u4e00-\u9fa5]/g, (char) => {
@@ -115,26 +110,20 @@
         let manualZip = document.getElementById('manualZip').value.trim();
         if (!original) return;
 
-        // --- 步骤 A: 预处理 ---
-        // 1. 转半角
         let raw = toHalfWidth(original);
-        // 2. 将中文标点替换为空格，避免粘连
         raw = raw.replace(/[，。、；：]/g, ' '); 
-        // 3. 去除首尾空白
         raw = raw.trim();
 
-        // --- 步骤 B: 提取电话 (优先提取并移除) ---
+        // 1. 提取电话
         let phone = "";
-        // 匹配 11位手机号 或 固定电话
         const phoneRegex = /(1[3-9]\d{9})|(\d{3,4}-?\d{7,8})/;
         const phoneMatch = raw.match(phoneRegex);
         if (phoneMatch) {
             phone = phoneMatch[0];
-            // 移除电话，替换为空格，防止前后文粘连
             raw = raw.replace(phone, " ").trim(); 
         }
 
-        // --- 步骤 C: 提取邮编 ---
+        // 2. 提取邮编
         let zip = manualZip;
         if (!zip) {
             const zipRegex = /\d{6}/;
@@ -145,83 +134,24 @@
             }
         }
 
-        // --- 步骤 D: 核心分割 (姓名 vs 地址) ---
-        // 使用锚点法：找到“省”或“市”的位置，左边是名字，右边是地址
+        // 3. 分割姓名和地址 (使用省市关键词锚点)
         let namePart = "";
         let addressPart = "";
-
-        // 查找省份或直辖市关键字
-        // 匹配：任意字符 + (省|自治区|行政区|市|地区)
-        // 注意：这里查找的是字符串中第一个出现的这些词
-        const splitRegex = /(省|自治区|行政区|市|地区|盟|州)/;
-        const splitMatch = raw.match(splitRegex);
-
-        if (splitMatch) {
-            const splitIndex = splitMatch.index;
-            
-            // 关键字在地址中的位置。我们需要回溯找到地址的起始点。
-            // 简单处理：通常关键字的前2-3个字是省名/市名。
-            // 更稳妥的方法：假设名字和地址之间有空格，或者名字在最前面。
-            
-            // 策略：如果找到了关键字，我们看它前面是否有文字。
-            // 让我们尝试在关键字前找2-3个字作为省名，再之前的作为名字。
-            
-            // 截取省份关键字之前的字符串
-            const beforeKeyword = raw.substring(0, splitIndex);
-            
-            // 倒着找省份名（通常2-3个字）
-            // 比如 "庄丽丽 福建"，关键字是"省"(match index在建后面不行，正则匹配的是关键词本身)
-            // splitMatch[0] 是 "省"。 splitMatch.index 是 "省" 的位置。
-            
-            // 我们需要确定省名有多长。
-            // 如果是 "福建省"，splitIndex指向"省"。raw[splitIndex-1]是"建"，raw[splitIndex-2]是"福"。
-            // 绝大多数省名是2-3个字。
-            
-            // 临时逻辑：我们把 "省" 及其之后的所有内容当作地址。
-            // "省" 之前的内容，切掉最后2-3个字(省名)后，剩下的就是名字？
-            // 不行，如果用户输入 "上海市"，没有"省"。
-            
-            // V5 改进策略：利用 pinyin-pro 库无法区分语义，我们用“清洗后的剩余文本”来切分。
-            // 既然电话已经拿走了。
-            // 假设：名字在最前面。地址紧随其后。
-            // 我们直接用正则提取 "省/市" 完整字段，找到它的起始位置。
-            
-            const provCityRegex = /(.{2,3}?(省|自治区|行政区|市|地区))/; 
-            const pcMatch = raw.match(provCityRegex);
-            
-            if (pcMatch) {
-                // pcMatch[0] 是例如 "福建省" 或 "上海市"
-                const addrStartIndex = raw.indexOf(pcMatch[0]);
-                
-                // 1. 切割名字
-                namePart = raw.substring(0, addrStartIndex).trim();
-                
-                // 2. 切割地址 (从省份开始)
-                addressPart = raw.substring(addrStartIndex).trim();
-            } else {
-                // 没找到省市关键字，可能没写省，直接写路？
-                // 此时按旧逻辑：前2-3字为名，后面为地址
-                addressPart = raw; // 暂存
-            }
+        const provCityRegex = /(.{2,3}?(省|自治区|行政区|市|地区))/; 
+        const pcMatch = raw.match(provCityRegex);
+        
+        if (pcMatch) {
+            const addrStartIndex = raw.indexOf(pcMatch[0]);
+            namePart = raw.substring(0, addrStartIndex).trim();
+            addressPart = raw.substring(addrStartIndex).trim();
         } else {
-            // 没找到关键字，全当地址处理，或者尝试强行提取头部为名字
-            // 如果地址部分包含 '路' '区' 等，取前面为名字
-            const possibleAddr = raw.match(/(.+?)(区|县|路|街|镇)/);
-            if (possibleAddr) {
-                // 这里比较危险，简化处理
-                addressPart = raw;
-            }
+            addressPart = raw; // 没找到省市，全当地址
         }
 
-        // 姓名再处理：如果切出来的 namePart 为空（可能连在一起了），但 addressPart 很长
-        // 比如 "庄丽丽福建省..."，正则提取 "福建省" index为3。namePart = raw(0,3) = "庄丽丽"。逻辑成立。
-        
-        // 姓名拆分 (姓 + 名)
+        // 4. 姓名处理
         let surname = "";
         let firstname = "";
-        
-        // 清理一下 namePart (去掉可能残留的空格)
-        namePart = namePart.replace(/\s+/g, '');
+        namePart = namePart.replace(/\s+/g, ''); // 去空格
         
         if (namePart.length >= 2) {
             let isCompound = false;
@@ -239,15 +169,11 @@
             }
         }
 
-        // --- 步骤 E: 地址深度解析 ---
-        // 对 addressPart 进行解析 (省、市、详细)
+        // 5. 地址处理
         let province = "";
         let city = "";
-        let details = "";
-        
         let tempAddr = addressPart;
 
-        // 提取省
         const provRegex = /^(.{2,5}?(省|自治区|行政区))/;
         const pMatch = tempAddr.match(provRegex);
         if (pMatch) {
@@ -255,7 +181,6 @@
             tempAddr = tempAddr.replace(province, "").trim();
         }
 
-        // 提取市
         const cityRegex = /^(.{2,5}?(市|州|盟|地区))/;
         const cMatch = tempAddr.match(cityRegex);
         if (cMatch) {
@@ -263,15 +188,13 @@
             tempAddr = tempAddr.replace(city, "").trim();
         }
 
-        // 剩下的就是详细地址，进行切词
+        // 详细地址切分
         const longKeywords = ['街道', '社区', '新区', '大厦', '中心', '广场', '花园', '小区', '公寓', '单元'];
         const shortKeywords = ['区', '县', '镇', '村', '路', '街', '巷', '道', '段', '弄', '号', '栋', '座', '楼', '室', '房', '层', '苑'];
         
         let detailParts = [];
         let currentPart = "";
-        
-        // 详细地址去掉空格
-        tempAddr = tempAddr.replace(/\s/g, '');
+        tempAddr = tempAddr.replace(/\s/g, ''); // 详细地址去空格
 
         for (let i = 0; i < tempAddr.length; i++) {
             const char = tempAddr[i];
@@ -294,54 +217,39 @@
         }
         if (currentPart) detailParts.push(currentPart);
 
-
-        // --- 步骤 F: 拼音转换与组装 ---
-        
-        // 1. 姓名 (Name) - 强制大写首字母，中间加空格
+        // 6. 拼音生成
         const p_surname = toCamel(surname);
         const p_firstname = toCamel(firstname);
-        // 组合：Surname Firstname
         const p_fullName = (p_surname + " " + p_firstname).trim();
 
-        // 2. 电话 (Phone) - 已经在前面提取 phone
-
-        // 3. 省 (Province)
         let p_prov = toCamel(province);
         if (p_prov.endsWith("Sheng")) p_prov = p_prov.slice(0, -5);
 
-        // 4. 市 (City)
         let p_city = toCamel(city);
         if (p_city.endsWith("Shi")) p_city = p_city.slice(0, -3);
 
-        // 5. 详细地址 (Details) - 逗号分隔
         let p_details = detailParts.map(part => {
-             // 保留数字，汉字转拼音
              return part.replace(/([\u4e00-\u9fa5]+)|([0-9a-zA-Z]+)/g, (m, ch, num) => {
                  if (ch) return toCamel(ch);
                  return m;
              });
         }).filter(p => p).join(", "); 
 
-        // --- 最终输出 (Full Line) ---
-        // 格式要求：Name Phone Province City Details Zip
-        // 标点：全英文半角。部分之间用空格，Detail内部用逗号。
-        
+        // 7. 组装
         let finalArr = [];
         if (p_fullName) finalArr.push(p_fullName);
         if (phone) finalArr.push(phone);
         if (p_prov) finalArr.push(p_prov);
         if (p_city) finalArr.push(p_city);
         
-        // 省 市 后面接详细地址
         let header = finalArr.join(" "); 
         let fullLine = header;
         
-        if (p_details) fullLine += " " + p_details; // 详细地址前加空格
+        if (p_details) fullLine += " " + p_details;
         if (zip) fullLine += " " + zip;
 
         document.getElementById('fullResult').value = fullLine;
 
-        // 渲染列表
         renderFields([
             { label: '姓 Surname', val: p_surname },
             { label: '名 Name', val: p_firstname },
@@ -373,10 +281,15 @@
         navigator.clipboard.writeText(text);
     }
 
+    // --- 核心修改：搜索逻辑 ---
     function searchZip() {
         const raw = document.getElementById('input').value;
-        if(raw) window.open(`https://www.baidu.com/s?wd=${encodeURIComponent(raw + ' 邮编')}`, '_blank');
-        else alert("请输入内容");
+        if(raw) {
+            // 这里修改为：原文 + 空格 + 邮政编码
+            window.open(`https://www.baidu.com/s?wd=${encodeURIComponent(raw + ' 邮政编码')}`, '_blank');
+        } else {
+            alert("请输入内容");
+        }
     }
 
     function clearAll() {
